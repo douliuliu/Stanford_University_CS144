@@ -8,7 +8,7 @@
 
 #include <functional>
 #include <queue>
-
+#include <vector>
 //! \brief The "sender" part of a TCP implementation.
 
 //! Accepts a ByteStream, divides it up into segments and sends the
@@ -32,6 +32,30 @@ class TCPSender {
     //! the (absolute) sequence number for the next byte to be sent
     uint64_t _next_seqno{0};
 
+    uint64_t _window_size{1};                 // 对方窗口大小
+
+    WrappingInt32 _ackno{0};                  // 对方回复32位的确认号
+
+    uint64_t _abs_ackno{0};                   // _ackno转化对应的64位绝对值确认号
+
+    bool _syn_sent{false};                    // 自己是否发送了syn标志
+
+    bool _syn_received{false};                // 自己是否接受到syn确认号
+
+    bool _fin_sent{false};                    // 自己是否发送了fin标志
+
+    bool _fin_received{false};                // 自己是否接受到fin确认号
+
+    size_t _ticks{0};                         // 记录时间流逝的成员变量
+
+    size_t _retransmission_timeout{0};        // 超时重传时间
+
+    std::vector<TCPSegment> _segment_vector{std::vector<TCPSegment>()}; // 装未完成tcp段的容器
+
+    size_t _consecutive_retransmissions{0};   // 连续超时重传次数
+
+    bool _zero_window{false};                 // 对方是否零窗口
+
   public:
     //! Initialize a TCPSender
     TCPSender(const size_t capacity = TCPConfig::DEFAULT_CAPACITY,
@@ -48,7 +72,7 @@ class TCPSender {
     //!@{
 
     //! \brief A new acknowledgment was received
-    void ack_received(const WrappingInt32 ackno, const uint16_t window_size);
+    int ack_received(const WrappingInt32 ackno, const uint16_t window_size);
 
     //! \brief Generate an empty-payload segment (useful for creating empty ACK segments)
     void send_empty_segment();

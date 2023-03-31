@@ -8,12 +8,72 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
-
+#include<string.h>
 using namespace std;
 
 int main() {
     try {
         auto rd = get_random_generator();
+        {
+            TCPReceiver receiver =TCPReceiver(10);
+            TCPSegment seg = TCPSegment();
+            seg.header().syn = true;
+            seg.header().seqno = WrappingInt32(0);
+            receiver.segment_received(seg);
+
+            if(receiver.ackno() != WrappingInt32(1)){
+                return EXIT_FAILURE;
+            }
+
+            seg = TCPSegment();
+            seg.header().seqno = WrappingInt32(1);
+            seg.payload() = string("hi");
+            receiver.segment_received(seg);
+            // 0-syn,  1-h,  2-i
+            if(receiver.ackno() != WrappingInt32(3)){
+                return EXIT_FAILURE;
+            }
+            if(receiver.window_size() != 8){
+                return EXIT_FAILURE;
+            }
+
+            seg = TCPSegment();
+            seg.header().seqno = WrappingInt32(5);
+            seg.payload() = string("abc");
+            receiver.segment_received(seg);
+            if(receiver.ackno() != WrappingInt32(3)){
+                printf("receiver.ackno(): %d\n", receiver.ackno().value().raw_value());
+                return EXIT_FAILURE;
+            }
+            if(receiver.window_size() != 8){
+                printf("receiver.window_size(): %zu\n", receiver.window_size());
+                return EXIT_FAILURE;
+            }
+
+
+            seg = TCPSegment();
+            seg.header().seqno = WrappingInt32(3);
+            seg.payload() = string("--");
+            receiver.segment_received(seg);
+            if(receiver.ackno() != WrappingInt32(8)){
+                printf("receiver.ackno(): %d\n", receiver.ackno().value().raw_value());
+                return EXIT_FAILURE;
+            }
+            if(receiver.window_size() != 3){
+                printf("receiver.window_size(): %zu\n", receiver.window_size());
+                return EXIT_FAILURE;
+            }
+
+            string s = receiver.stream_out().read(8);
+            if(strcmp(s.c_str(), "hi--abc" ) != 0){
+                printf("s: %s\n", s.c_str());
+                return EXIT_FAILURE;
+            }
+            if(receiver.window_size() != 10){
+                printf("receiver.window_size() != 10\n");
+                return EXIT_FAILURE;
+            }
+        }
 
         {
             uint32_t isn = uniform_int_distribution<uint32_t>{0, UINT32_MAX}(rd);
