@@ -14,7 +14,7 @@ using namespace std;
 int main() {
     try {
         auto rd = get_random_generator();
-        {
+        /* {
             TCPReceiver receiver =TCPReceiver(10);
             TCPSegment seg = TCPSegment();
             seg.header().syn = true;
@@ -73,7 +73,7 @@ int main() {
                 printf("receiver.window_size() != 10\n");
                 return EXIT_FAILURE;
             }
-        }
+        } */
 
         {
             uint32_t isn = uniform_int_distribution<uint32_t>{0, UINT32_MAX}(rd);

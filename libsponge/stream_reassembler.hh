@@ -1,25 +1,37 @@
 #ifndef SPONGE_LIBSPONGE_STREAM_REASSEMBLER_HH
 #define SPONGE_LIBSPONGE_STREAM_REASSEMBLER_HH
 
+#include "buffer_plus.hh"
 #include "byte_stream.hh"
 
 #include <cstdint>
+#include <set>
 #include <string>
-
-#include <map>
 
 //! \brief A class that assembles a series of excerpts from a byte stream (possibly out of order,
 //! possibly overlapping) into an in-order byte stream.
 class StreamReassembler {
   private:
-    // Your code here -- add private members as necessary. The interval of sliding window is [_first_unassembled, _first unacceptable).
-    size_t _first_unassembled = 0;    // 第一个还未被组装的字节索引(也是滑动窗口的左边界)，右边界是_first unacceptable, 左闭右开
-    bool _eof_flag = false;           // 是否结束标志
-    size_t _end_index = 0;            // 字节流结束的索引
-    std::map<size_t, char> _unassembled_bytes_map = {};   // 未组装数据暂存区
+    // Your code here -- add private members as necessary.
+    struct Block {
+        size_t index;     //!< The index of the data in BufferPlus
+        BufferPlus data;  //!< The buffer to store the string
 
-    ByteStream _output;               //!< The reassembled in-order byte stream
-    size_t _capacity;                 //!< The maximum number of bytes
+        Block(size_t idx, std::string &&str) noexcept : index(idx), data(std::move(str)) {}
+
+        bool operator<(const Block &block) const { return index < block.index; }
+
+        //! \brief the size of string in block
+        size_t size() const { return data.size(); }
+    };
+
+    std::set<Block> _buffer{};     //!< The set to store unassembled strings
+    size_t _unassembled_bytes{0};  //!< Total number of unassembled bytes
+    bool _eof{false};              //!< Flag indicating that the end of bytes has been stored into `_buffer`
+    ByteStream _output;            //!< The reassembled in-order byte stream
+    size_t _capacity;              //!< The maximum number of bytes
+
+    void insert_block(size_t index, std::string &&data);
 
   public:
     //! \brief Construct a `StreamReassembler` that will store up to `capacity` bytes.
@@ -53,7 +65,7 @@ class StreamReassembler {
     //! \returns `true` if no substrings are waiting to be assembled
     bool empty() const;
 
-    size_t first_unassembled() const { return _first_unassembled; }
+    size_t first_unassembled() const { return _output.bytes_read() + _output.buffer_size(); }
 
     bool input_ended() const { return _output.input_ended(); }
 };
