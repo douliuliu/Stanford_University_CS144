@@ -26,7 +26,7 @@ size_t ByteStream::write(const string &data) {
 //! \param[in] len bytes will be copied from the output side of the buffer
 string ByteStream::peek_output(const size_t len) const {
     string str = _buffer.concatenate();
-    return string().assign(string().assign(str.begin(), str.begin() + min(len, _buffer_size)));
+    return string().assign(str.begin(), str.begin() + min(len, _buffer_size));
 }
 
 //! \param[in] len bytes will be removed from the output side of the buffer
