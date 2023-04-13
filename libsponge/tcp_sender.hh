@@ -50,7 +50,7 @@ class TCPSender {
 
     size_t _retransmission_timeout{0};        // 超时重传时间
 
-    std::vector<TCPSegment> _segment_vector{std::vector<TCPSegment>()}; // 装未完成tcp段的容器
+    std::queue<TCPSegment> _segment_queue{std::queue<TCPSegment>()}; // 装未完成tcp段的容器
 
     size_t _consecutive_retransmissions{0};   // 连续超时重传次数
 

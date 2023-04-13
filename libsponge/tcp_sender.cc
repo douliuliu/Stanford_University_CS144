@@ -51,7 +51,7 @@ void TCPSender::fill_window() {
             }
         }
         if(seg.length_in_sequence_space() > 0){
-            _segment_vector.push_back(seg);
+            _segment_queue.push(seg);
             _segments_out.push(seg);
             _next_seqno += seg.length_in_sequence_space(); 
         }else{
@@ -88,37 +88,39 @@ int TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_siz
     }
     if(!_fin_received && _fin_sent && _stream.input_ended() && _abs_ackno >= _stream.bytes_read() + 2){
         _fin_received = true;
-        _segment_vector.clear();
+        _segment_queue = queue<TCPSegment>();
     }
-    vector<TCPSegment> segs = vector<TCPSegment>();
-    for(const auto &seg : _segment_vector){
+    
+    while(!_segment_queue.empty()){
+        const auto &seg = _segment_queue.front();
         uint64_t seqno = unwrap(seg.header().seqno, _isn, _abs_ackno);
         if(seqno + seg.length_in_sequence_space() > _abs_ackno){
-            segs.push_back(seg);
+            break;
+        }else{
+            _segment_queue.pop();
         }
     }
-    _segment_vector = segs;
     return 0;
 }
 
 //! \param[in] ms_since_last_tick the number of milliseconds since the last call to this method
 void TCPSender::tick(const size_t ms_since_last_tick) {
     if(bytes_in_flight() == 0){
-        if(!_segment_vector.empty()){
-            printf("!_segment_vector.empty()\n");
+        if(!_segment_queue.empty()){
+            printf("!_segment_queue.empty()\n");
             assert(0);
         }
         _ticks = 0;
         return;
     }
-    if(_segment_vector.empty()){
-        printf("_segment_vector.empty()\n");
+    if(_segment_queue.empty()){
+        printf("_segment_queue.empty()\n");
         assert(0);
     }
     _ticks += ms_since_last_tick;
     if(_ticks >= _retransmission_timeout){
         _ticks = 0;
-        _segments_out.push(_segment_vector[0]);
+        _segments_out.push(_segment_queue.front());
         if(!_zero_window){
             _retransmission_timeout *= 2;
         }

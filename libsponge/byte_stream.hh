@@ -20,7 +20,7 @@ class ByteStream {
     // different approaches.
     const size_t _cap;  //! The capacity of the stream buffer
 
-    BufferList _buffer{};       //!< Byte stream buffer
+    BufferList _buffer{};       //!< Byte stream buffer    deque存字符串
     size_t _buffer_size = 0;    //! Total number of bytes in buffer
     size_t _total_read = 0;     //!< Total number of bytes written
     size_t _total_written = 0;  //!< Total number of bytes popped

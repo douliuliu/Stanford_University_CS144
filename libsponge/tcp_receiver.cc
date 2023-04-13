@@ -12,7 +12,7 @@ using namespace std;
 
 bool TCPReceiver::segment_received(const TCPSegment &seg) {
     bool ret = false;
-    static size_t abs_seqno = 0;
+    static size_t abs_seqno = 0;    // 每个接收到的报文的第一个索引（即序列号）64位的绝对值
     size_t length;
     if(seg.header().syn){ // 头部有syn连接标志
         if(_syn_flag){  // already get a SYN, refuse other SYN.

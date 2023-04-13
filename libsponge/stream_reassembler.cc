@@ -27,7 +27,7 @@ void StreamReassembler::push_substring(const string &data, const size_t index, c
     // the eof flag of data after removing
     bool eof_flag = eof;
     // if the whole data string is reassembled or unacceptable, it will be discarded
-    if (idx + len <= first_unassembled || idx >= first_unacceptable) {
+    if (idx + len < first_unassembled || idx >= first_unacceptable) {
         return;
     }
     // remove the unassembled and unacceptable bytes in data
